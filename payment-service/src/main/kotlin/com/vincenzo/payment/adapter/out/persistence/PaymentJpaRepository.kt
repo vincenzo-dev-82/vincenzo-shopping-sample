@@ -6,10 +6,6 @@ import org.springframework.data.repository.query.Param
 
 interface PaymentJpaRepository : JpaRepository<PaymentEntity, Long> {
     
-    fun findByPaymentKey(paymentKey: String): PaymentEntity?
-    
-    fun findByOrderId(orderId: Long): PaymentEntity?
-    
     @Query("SELECT p FROM PaymentEntity p LEFT JOIN FETCH p.paymentMethods WHERE p.paymentKey = :paymentKey")
     fun findByPaymentKeyWithMethods(@Param("paymentKey") paymentKey: String): PaymentEntity?
     

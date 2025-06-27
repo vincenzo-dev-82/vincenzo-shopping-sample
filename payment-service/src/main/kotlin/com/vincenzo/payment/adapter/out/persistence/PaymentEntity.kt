@@ -113,7 +113,7 @@ class PaymentMethodEntity(
             amount = amount,
             status = status,
             externalTransactionId = externalTransactionId,
-            additionalInfo = emptyMap() // 실제로는 별도 테이블로 관리해야 하지만 샘플에서는 생략
+            additionalInfo = emptyMap() // JPA에서는 간단히 처리
         )
     }
     
@@ -125,7 +125,9 @@ class PaymentMethodEntity(
                 methodType = paymentMethod.methodType,
                 amount = paymentMethod.amount,
                 status = paymentMethod.status,
-                externalTransactionId = paymentMethod.externalTransactionId
+                externalTransactionId = paymentMethod.externalTransactionId,
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now()
             )
         }
     }

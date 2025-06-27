@@ -25,23 +25,9 @@ class PaymentRepositoryAdapter(
                     createdAt = existing.createdAt,
                     updatedAt = java.time.LocalDateTime.now()
                 )
-                
-                // 기존 결제 방법들 업데이트
-                payment.paymentMethods.forEachIndexed { index, paymentMethod ->
-                    if (index < existing.paymentMethods.size) {
-                        val existingMethod = existing.paymentMethods[index]
-                        val updatedMethod = PaymentMethodEntity(
-                            id = existingMethod.id,
-                            payment = updated,
-                            methodType = existingMethod.methodType,
-                            amount = existingMethod.amount,
-                            status = paymentMethod.status,
-                            externalTransactionId = paymentMethod.externalTransactionId ?: existingMethod.externalTransactionId,
-                            createdAt = existingMethod.createdAt,
-                            updatedAt = java.time.LocalDateTime.now()
-                        )
-                        updated.paymentMethods.add(updatedMethod)
-                    }
+                // 기존 결제 방법들 복사
+                existing.paymentMethods.forEach { method ->
+                    updated.paymentMethods.add(method)
                 }
                 updated
             } else {
