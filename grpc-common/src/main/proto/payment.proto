@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package vincenzo.payment;
+
+option java_package = "com.vincenzo.grpc.payment";
+option java_outer_classname = "PaymentProto";
+option java_multiple_files = true;
+
+// 결제 서비스
+service PaymentService {
+  // 결제 처리
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  
+  // 결제 취소
+  rpc CancelPayment(CancelPaymentRequest) returns (CancelPaymentResponse);
+  
+  // 결제 상태 조회
+  rpc GetPaymentStatus(GetPaymentStatusRequest) returns (GetPaymentStatusResponse);
+}
+
+// 결제 처리 요청
+message ProcessPaymentRequest {
+  string payment_key = 1;
+  int64 order_id = 2;
+  int64 member_id = 3;
+  double total_amount = 4;
+  PaymentType payment_type = 5;
+  repeated PaymentMethodInfo payment_methods = 6;
+}
+
+// 결제 처리 응답
+message ProcessPaymentResponse {
+  bool success = 1;
+  string message = 2;
+  string payment_key = 3;
+  PaymentStatus status = 4;
+}
+
+// 결제 취소 요청
+message CancelPaymentRequest {
+  string payment_key = 1;
+  string reason = 2;
+}
+
+// 결제 취소 응답
+message CancelPaymentResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 결제 상태 조회 요청
+message GetPaymentStatusRequest {
+  string payment_key = 1;
+}
+
+// 결제 상태 조회 응답
+message GetPaymentStatusResponse {
+  bool success = 1;
+  string message = 2;
+  PaymentStatus status = 3;
+  double total_amount = 4;
+}
+
+// 결제 방법 정보
+message PaymentMethodInfo {
+  PaymentMethodType method_type = 1;
+  double amount = 2;
+  map<string, string> additional_info = 3;
+}
+
+// 결제 타입
+enum PaymentType {
+  SINGLE = 0;
+  COMBINED = 1;
+}
+
+// 결제 방법 타입
+enum PaymentMethodType {
+  PG = 0;
+  CASHPOINT = 1;
+  COUPON = 2;
+  BNPL = 3;
+}
+
+// 결제 상태
+enum PaymentStatus {
+  PENDING = 0;
+  COMPLETED = 1;
+  FAILED = 2;
+  CANCELLED = 3;
+}
