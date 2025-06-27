@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      
+logging:
+  level:
+    com.vincenzo: DEBUG
+    org.springframework.test: DEBUG
+    
+grpc:
+  server:
+    port: 0  # 테스트용 랜덤 포트
+  client:
+    member-service:
+      address: static://localhost:9091
+      negotiation-type: plaintext
+    product-service:
+      address: static://localhost:9092
+      negotiation-type: plaintext
+    payment-service:
+      address: static://localhost:9094
+      negotiation-type: plaintext
