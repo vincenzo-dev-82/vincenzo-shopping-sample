@@ -49,8 +49,11 @@ class PaymentGrpcService(
                 .setMessage(result.message)
                 .setPaymentKey(request.paymentKey)
                 .setStatus(
-                    if (result.success) com.vincenzo.grpc.payment.PaymentStatus.COMPLETED
-                    else com.vincenzo.grpc.payment.PaymentStatus.FAILED
+                    if (result.success) {
+                        com.vincenzo.grpc.payment.PaymentStatus.COMPLETED
+                    } else {
+                        com.vincenzo.grpc.payment.PaymentStatus.FAILED
+                    }
                 )
                 .build()
         } catch (e: Exception) {
@@ -69,7 +72,7 @@ class PaymentGrpcService(
         } catch (e: Exception) {
             CancelPaymentResponse.newBuilder()
                 .setSuccess(false)
-                .setMessage(e.message ?: "결제 취소에 실패했습니다.")
+                .setMessage(e.message ?: "결제 취소 실패")
                 .build()
         }
     }
@@ -84,10 +87,14 @@ class PaymentGrpcService(
                     .setMessage("성공")
                     .setStatus(
                         when (payment.status) {
-                            com.vincenzo.payment.domain.model.PaymentStatus.PENDING -> com.vincenzo.grpc.payment.PaymentStatus.PENDING
-                            com.vincenzo.payment.domain.model.PaymentStatus.COMPLETED -> com.vincenzo.grpc.payment.PaymentStatus.COMPLETED
-                            com.vincenzo.payment.domain.model.PaymentStatus.FAILED -> com.vincenzo.grpc.payment.PaymentStatus.FAILED
-                            com.vincenzo.payment.domain.model.PaymentStatus.CANCELLED -> com.vincenzo.grpc.payment.PaymentStatus.CANCELLED
+                            com.vincenzo.payment.domain.model.PaymentStatus.PENDING -> 
+                                com.vincenzo.grpc.payment.PaymentStatus.PENDING
+                            com.vincenzo.payment.domain.model.PaymentStatus.COMPLETED -> 
+                                com.vincenzo.grpc.payment.PaymentStatus.COMPLETED
+                            com.vincenzo.payment.domain.model.PaymentStatus.FAILED -> 
+                                com.vincenzo.grpc.payment.PaymentStatus.FAILED
+                            com.vincenzo.payment.domain.model.PaymentStatus.CANCELLED -> 
+                                com.vincenzo.grpc.payment.PaymentStatus.CANCELLED
                         }
                     )
                     .setTotalAmount(payment.totalAmount.toDouble())
