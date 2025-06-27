@@ -23,6 +23,7 @@ dependencies {
     
     // Database
     runtimeOnly("mysql:mysql-connector-java:8.0.33")
+    testRuntimeOnly("com.h2database:h2")
     
     // Kafka
     implementation("org.springframework.kafka:spring-kafka")
@@ -48,6 +49,9 @@ dependencies {
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.kafka:spring-kafka-test")
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:mysql")
 }
 
 kotlin {
