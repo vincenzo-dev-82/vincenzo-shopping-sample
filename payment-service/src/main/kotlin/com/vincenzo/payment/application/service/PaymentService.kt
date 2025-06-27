@@ -4,9 +4,6 @@ import com.vincenzo.payment.application.port.`in`.*
 import com.vincenzo.payment.application.port.out.*
 import com.vincenzo.payment.domain.event.*
 import com.vincenzo.payment.domain.model.*
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -19,8 +16,8 @@ class PaymentService(
 ) : PaymentUseCase {
     
     override suspend fun processPayment(request: ProcessPaymentRequest): ProcessPaymentResult {
-        return try {
-            // 1. 결제 방법 생성
+        try {
+            // 1. 결제 정보 생성
             val paymentMethods = request.paymentMethods.map { methodRequest ->
                 PaymentMethod(
                     methodType = methodRequest.methodType,
@@ -29,7 +26,6 @@ class PaymentService(
                 )
             }
             
-            // 2. 결제 객체 생성 (도메인 규칙 검증 포함)
             val payment = Payment(
                 paymentKey = request.paymentKey,
                 orderId = request.orderId,
@@ -38,70 +34,72 @@ class PaymentService(
                 paymentMethods = paymentMethods
             )
             
-            // 3. 결제 저장
+            // 2. 결제 저장 (대기 상태)
             val savedPayment = paymentRepository.save(payment)
             
-            // 4. 각 결제 방법별로 병렬 처리
-            val processResults = coroutineScope {
-                paymentMethods.map { paymentMethod ->
-                    async {
-                        val processor = findProcessor(paymentMethod.methodType)
-                        processor.process(paymentMethod, request.memberId)
-                    }
-                }.awaitAll()
-            }
+            // 3. 각 결제 방법별 처리
+            val processedMethods = mutableListOf<PaymentMethod>()
+            val completedMethods = mutableListOf<PaymentMethod>()
             
-            // 5. 결과 검증
-            val failedResults = processResults.filter { !it.success }
-            
-            if (failedResults.isNotEmpty()) {
-                // 실패한 결제가 있으면 성공한 결제들을 롤백
-                rollbackSuccessfulPayments(paymentMethods, processResults, request.memberId)
-                
-                val failedPayment = savedPayment.fail()
-                paymentRepository.save(failedPayment)
-                
-                val failureReason = failedResults.joinToString(", ") { it.message }
-                val event = PaymentFailedEvent(
-                    paymentKey = request.paymentKey,
-                    orderId = request.orderId,
-                    amount = request.totalAmount,
-                    reason = failureReason
-                )
-                eventPublisher.publishPaymentEvent(event)
-                
-                ProcessPaymentResult(
-                    success = false,
-                    message = "결제 처리 실패: $failureReason"
-                )
-            } else {
-                // 모든 결제가 성공
-                val completedMethods = paymentMethods.zip(processResults) { method, result ->
-                    method.complete(result.externalTransactionId)
+            for (method in savedPayment.paymentMethods) {
+                val processor = findProcessor(method.methodType)
+                if (processor == null) {
+                    // 지원하지 않는 결제 방법 시 보상 트랜잭션 수행
+                    rollbackCompletedMethods(completedMethods, request.memberId)
+                    
+                    val failedPayment = savedPayment.fail()
+                    paymentRepository.save(failedPayment)
+                    
+                    publishFailedEvent(failedPayment, "지원하지 않는 결제 방법: ${method.methodType}")
+                    
+                    return ProcessPaymentResult(
+                        success = false,
+                        message = "지원하지 않는 결제 방법입니다: ${method.methodType}"
+                    )
                 }
                 
-                val completedPayment = savedPayment.copy(
-                    paymentMethods = completedMethods
-                ).complete()
+                val result = processor.process(method, request.memberId)
+                if (!result.success) {
+                    // 결제 실패 시 보상 트랜잭션 수행
+                    rollbackCompletedMethods(completedMethods, request.memberId)
+                    
+                    val failedPayment = savedPayment.fail()
+                    paymentRepository.save(failedPayment)
+                    
+                    publishFailedEvent(failedPayment, result.message)
+                    
+                    return ProcessPaymentResult(
+                        success = false,
+                        message = result.message
+                    )
+                }
                 
-                val finalPayment = paymentRepository.save(completedPayment)
-                
-                val event = PaymentCompletedEvent(
-                    paymentKey = request.paymentKey,
-                    orderId = request.orderId,
-                    amount = request.totalAmount,
-                    memberId = request.memberId
-                )
-                eventPublisher.publishPaymentEvent(event)
-                
-                ProcessPaymentResult(
-                    success = true,
-                    message = "결제가 성공적으로 완료되었습니다.",
-                    payment = finalPayment
-                )
+                val completedMethod = method.complete(result.externalTransactionId)
+                processedMethods.add(completedMethod)
+                completedMethods.add(completedMethod)
             }
+            
+            // 4. 모든 결제 방법 성공 시 결제 완료
+            val completedPayment = savedPayment.complete()
+            val finalPayment = paymentRepository.save(completedPayment)
+            
+            // 5. 성공 이벤트 발행
+            val event = PaymentCompletedEvent(
+                paymentKey = finalPayment.paymentKey,
+                orderId = finalPayment.orderId,
+                amount = finalPayment.totalAmount,
+                memberId = request.memberId
+            )
+            eventPublisher.publishPaymentEvent(event)
+            
+            return ProcessPaymentResult(
+                success = true,
+                message = "결제가 성공적으로 완료되었습니다.",
+                payment = finalPayment
+            )
+            
         } catch (e: Exception) {
-            ProcessPaymentResult(
+            return ProcessPaymentResult(
                 success = false,
                 message = e.message ?: "결제 처리 중 오류가 발생했습니다."
             )
@@ -112,26 +110,21 @@ class PaymentService(
         val payment = paymentRepository.findByPaymentKey(paymentKey)
             ?: throw IllegalArgumentException("존재하지 않는 결제입니다.")
         
-        // 각 결제 방법별로 취소 처리
-        coroutineScope {
-            payment.paymentMethods.map { paymentMethod ->
-                async {
-                    if (paymentMethod.status == PaymentMethodStatus.COMPLETED) {
-                        val processor = findProcessor(paymentMethod.methodType)
-                        // memberId는 실제로는 payment에서 가져와야 하지만, 현재 모델에 없으므로 0으로 임시 처리
-                        processor.cancel(paymentMethod, 0L)
-                    }
-                }
-            }.awaitAll()
+        if (payment.status == PaymentStatus.COMPLETED) {
+            // 완료된 결제의 경우 보상 트랜잭션 수행
+            val completedMethods = payment.paymentMethods.filter { it.status == PaymentMethodStatus.COMPLETED }
+            // memberId를 얻기 위해 추가 로직이 필요할 수 있음 (예: 주문 서비스에서 조회)
+            // 여기서는 간단히 0L로 처리
+            rollbackCompletedMethods(completedMethods, 0L)
         }
         
         val cancelledPayment = payment.cancel()
         val savedPayment = paymentRepository.save(cancelledPayment)
         
         val event = PaymentCancelledEvent(
-            paymentKey = paymentKey,
-            orderId = payment.orderId,
-            amount = payment.totalAmount,
+            paymentKey = savedPayment.paymentKey,
+            orderId = savedPayment.orderId,
+            amount = savedPayment.totalAmount,
             reason = reason
         )
         eventPublisher.publishPaymentEvent(event)
@@ -145,34 +138,37 @@ class PaymentService(
     }
     
     /**
-     * 결제 방법에 맞는 프로세서 찾기
+     * 결제 방법에 따른 처리기 찾기
      */
-    private fun findProcessor(methodType: PaymentMethodType): PaymentProcessor {
+    private fun findProcessor(methodType: PaymentMethodType): PaymentProcessor? {
         return paymentProcessors.find { it.supports(methodType) }
-            ?: throw IllegalArgumentException("지원하지 않는 결제 방법입니다: $methodType")
     }
     
     /**
-     * 성공한 결제들을 롤백
+     * 완료된 결제 방법들에 대한 보상 트랜잭션 수행
      */
-    private suspend fun rollbackSuccessfulPayments(
-        paymentMethods: List<PaymentMethod>,
-        processResults: List<PaymentProcessResult>,
-        memberId: Long
-    ) {
-        coroutineScope {
-            paymentMethods.zip(processResults) { method, result ->
-                async {
-                    if (result.success) {
-                        try {
-                            val processor = findProcessor(method.methodType)
-                            processor.cancel(method, memberId)
-                        } catch (e: Exception) {
-                            // 롤백 실패는 로그만 남기고 계속 진행
-                        }
-                    }
-                }
-            }.awaitAll()
+    private suspend fun rollbackCompletedMethods(completedMethods: List<PaymentMethod>, memberId: Long) {
+        for (method in completedMethods) {
+            try {
+                val processor = findProcessor(method.methodType)
+                processor?.cancel(method, memberId)
+            } catch (e: Exception) {
+                // 보상 트랜잭션 실패 로깅 (실제 서비스에서는 알림 및 수동 처리 필요)
+                println("보상 트랜잭션 실패: ${method.methodType}, ${e.message}")
+            }
         }
+    }
+    
+    /**
+     * 결제 실패 이벤트 발행
+     */
+    private fun publishFailedEvent(payment: Payment, reason: String) {
+        val event = PaymentFailedEvent(
+            paymentKey = payment.paymentKey,
+            orderId = payment.orderId,
+            amount = payment.totalAmount,
+            reason = reason
+        )
+        eventPublisher.publishPaymentEvent(event)
     }
 }
