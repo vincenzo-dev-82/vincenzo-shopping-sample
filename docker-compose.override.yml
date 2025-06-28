@@ -1,0 +1,59 @@
+version: '3.8'
+
+# 개발 환경 오버라이드 설정
+# docker-compose up 실행 시 자동으로 적용됩니다.
+
+services:
+  # 개발 시 빠른 재시작을 위한 설정
+  member-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - LOGGING_LEVEL_COM_VINCENZO=DEBUG
+    volumes:
+      - ./member-service/build/libs:/app/libs
+  
+  product-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - LOGGING_LEVEL_COM_VINCENZO=DEBUG
+    volumes:
+      - ./product-service/build/libs:/app/libs
+  
+  order-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - LOGGING_LEVEL_COM_VINCENZO=DEBUG
+    volumes:
+      - ./order-service/build/libs:/app/libs
+  
+  payment-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - LOGGING_LEVEL_COM_VINCENZO=DEBUG
+    volumes:
+      - ./payment-service/build/libs:/app/libs
+
+  # 개발용 툴들
+  adminer:
+    image: adminer:4.8.1
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    networks:
+      - vincenzo-network
+
+  # Kafka UI for 개발/디버깅
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    networks:
+      - vincenzo-network
+    depends_on:
+      - kafka
