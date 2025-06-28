@@ -51,30 +51,3 @@ data class CheckStockResponse(
     val currentStock: Int,
     val requestedQuantity: Int
 )
-
-/**
- * 재고 조작 요청 DTO
- */
-data class StockRequest(
-    val quantity: Int,
-    val transactionId: String
-)
-
-/**
- * 재고 조작 응답 DTO
- */
-data class StockResponse(
-    val success: Boolean,
-    val message: String,
-    val currentStock: Int?
-) {
-    companion object {
-        fun success(message: String, currentStock: Int): StockResponse {
-            return StockResponse(true, message, currentStock)
-        }
-        
-        fun failure(message: String): StockResponse {
-            return StockResponse(false, message, null)
-        }
-    }
-}
