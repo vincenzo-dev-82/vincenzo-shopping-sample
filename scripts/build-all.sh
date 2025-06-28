@@ -1,32 +1,41 @@
 #!/bin/bash
 
-# 전체 서비스 빌드 스크립트
+# 전체 프로젝트 빌드 스크립트
 
 set -e
 
-echo "🚀 캐시노트 마켓 주문 서비스 빌드 시작"
+echo "🚀 Building Vincenzo Shopping Sample Project..."
 
-# 루트 디렉토리 확인
-if [ ! -f "docker-compose.yml" ]; then
-    echo "❌ 프로젝트 루트 디렉토리에서 실행해주세요."
-    exit 1
-fi
+# 루트 디렉토리로 이동
+cd "$(dirname "$0")/.."
 
-# gRPC 공통 모듈 빌드
-echo "📦 gRPC 공통 모듈 빌드 중..."
-./gradlew :grpc-common:build
+echo "📦 Building gRPC common module..."
+cd grpc-common
+./gradlew build publishToMavenLocal
+cd ..
 
-# 각 서비스 빌드
-echo "🏗️ 서비스 빌드 중..."
-./gradlew :member-service:build
-./gradlew :product-service:build
-./gradlew :order-service:build
-./gradlew :payment-service:build
+echo "👤 Building member service..."
+cd member-service
+./gradlew build
+cd ..
 
-# Docker 이미지 빌드
-echo "🐳 Docker 이미지 빌드 중..."
+echo "📦 Building product service..."
+cd product-service
+./gradlew build
+cd ..
+
+echo "📋 Building order service..."
+cd order-service
+./gradlew build
+cd ..
+
+echo "💳 Building payment service..."
+cd payment-service
+./gradlew build
+cd ..
+
+echo "🐳 Building Docker images..."
 docker-compose build
 
-echo "✅ 빌드 완료!"
-echo "다음 명령어로 서비스를 시작할 수 있습니다:"
-echo "  docker-compose up -d"
+echo "✅ Build completed successfully!"
+echo "🏃 To run the services: docker-compose up -d"

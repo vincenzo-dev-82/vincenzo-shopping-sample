@@ -1,0 +1,33 @@
+### 헬스체크 API 테스트
+
+### Member Service Health Check
+GET http://localhost:8081/actuator/health
+Content-Type: application/json
+
+### Product Service Health Check
+GET http://localhost:8082/actuator/health
+Content-Type: application/json
+
+### Order Service Health Check
+GET http://localhost:8083/actuator/health
+Content-Type: application/json
+
+### Payment Service Health Check
+GET http://localhost:8084/actuator/health
+Content-Type: application/json
+
+### Member Service Info
+GET http://localhost:8081/actuator/info
+Content-Type: application/json
+
+### Product Service Info
+GET http://localhost:8082/actuator/info
+Content-Type: application/json
+
+### Order Service Info
+GET http://localhost:8083/actuator/info
+Content-Type: application/json
+
+### Payment Service Info
+GET http://localhost:8084/actuator/info
+Content-Type: application/json
