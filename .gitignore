@@ -1,12 +1,37 @@
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs
+hs_err_pid*
+replay_pid*
+
 # Gradle
-.gradle/
+.gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
 # IntelliJ IDEA
-.idea/
+.idea
 *.iws
 *.iml
 *.ipr
@@ -43,65 +68,49 @@ bin/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
-$RECYCLE.BIN/
-
-# Package Files
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
-
-# JVM Crash Logs
-hs_err_pid*
-
-# Logs
-logs/
-*.log
 
 # Docker
 .dockerignore
 
-# Environment variables
-.env
-.env.local
-.env.*.local
-
 # Application specific
 application-local.yml
-application-dev.yml
-application-prod.yml
+application-*.yml
+!application.yml
+
+# Logs
+logs/
+*.log
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
 
-# Node modules (if any frontend is added later)
-node_modules/
-
-# Generated files
-generated/
-target/
-
 # Temporary files
 *.tmp
 *.temp
 
-# Test results
-test-results/
+# Generated proto files
+**/generated/
+
+# Test reports
+**/test-results/
+**/reports/
 
 # Coverage reports
-.nyc_output/
-coverage/
+**/coverage/
+**/jacoco/
 
-# Kubernetes
-*.yaml.bak
-*.yml.bak
+# Node modules (for any frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Terraform
-*.tfstate
-*.tfstate.*
-.terraform/
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Docker volumes
+data/

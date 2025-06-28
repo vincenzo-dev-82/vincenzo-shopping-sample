@@ -47,34 +47,21 @@ data class StockCheckRequest(
  * 재고 확인 응답 DTO
  */
 data class StockCheckResponse(
-    val available: Boolean,
-    val currentStock: Int,
-    val requestedQuantity: Int
+    val available: Boolean
 )
 
 /**
- * 재고 업데이트 요청 DTO
+ * 재고 차감 요청 DTO
  */
-data class StockUpdateRequest(
+data class StockDeductRequest(
     val quantity: Int,
     val transactionId: String
 )
 
 /**
- * 재고 업데이트 응답 DTO
+ * 재고 복원 요청 DTO
  */
-data class StockUpdateResponse(
-    val success: Boolean,
-    val message: String,
-    val currentStock: Int?
-) {
-    companion object {
-        fun success(message: String, currentStock: Int): StockUpdateResponse {
-            return StockUpdateResponse(true, message, currentStock)
-        }
-        
-        fun failure(message: String): StockUpdateResponse {
-            return StockUpdateResponse(false, message, null)
-        }
-    }
-}
+data class StockRestoreRequest(
+    val quantity: Int,
+    val transactionId: String
+)

@@ -30,60 +30,40 @@ class ProductController(
     }
     
     @PostMapping("/{productId}/stock/check")
-    @Operation(summary = "재고 확인", description = "상품의 재고를 확인합니다.")
+    @Operation(summary = "재고 확인", description = "상품 재고를 확인합니다.")
     fun checkStock(
         @PathVariable productId: Long,
         @RequestBody request: StockCheckRequest
     ): ResponseEntity<StockCheckResponse> {
         val available = productUseCase.checkStock(productId, request.quantity)
-        val product = productUseCase.getProduct(productId)
-        
-        return ResponseEntity.ok(
-            StockCheckResponse(
-                available = available,
-                currentStock = product?.stockQuantity ?: 0,
-                requestedQuantity = request.quantity
-            )
-        )
+        return ResponseEntity.ok(StockCheckResponse(available))
     }
     
     @PostMapping("/{productId}/stock/deduct")
-    @Operation(summary = "재고 차감", description = "상품의 재고를 차감합니다.")
+    @Operation(summary = "재고 차감", description = "상품 재고를 차감합니다.")
     fun deductStock(
         @PathVariable productId: Long,
-        @RequestBody request: StockUpdateRequest
-    ): ResponseEntity<StockUpdateResponse> {
+        @RequestBody request: StockDeductRequest
+    ): ResponseEntity<ProductResponse> {
         return try {
             val updatedProduct = productUseCase.deductStock(productId, request.quantity, request.transactionId)
-            ResponseEntity.ok(
-                StockUpdateResponse.success(
-                    "재고 차감 성공",
-                    updatedProduct.stockQuantity
-                )
-            )
+            ResponseEntity.ok(ProductResponse.fromDomain(updatedProduct))
         } catch (e: Exception) {
-            ResponseEntity.badRequest()
-                .body(StockUpdateResponse.failure(e.message ?: "재고 차감 실패"))
+            ResponseEntity.badRequest().build()
         }
     }
     
     @PostMapping("/{productId}/stock/restore")
-    @Operation(summary = "재고 복원", description = "상품의 재고를 복원합니다.")
+    @Operation(summary = "재고 복원", description = "상품 재고를 복원합니다.")
     fun restoreStock(
         @PathVariable productId: Long,
-        @RequestBody request: StockUpdateRequest
-    ): ResponseEntity<StockUpdateResponse> {
+        @RequestBody request: StockRestoreRequest
+    ): ResponseEntity<ProductResponse> {
         return try {
             val updatedProduct = productUseCase.restoreStock(productId, request.quantity, request.transactionId)
-            ResponseEntity.ok(
-                StockUpdateResponse.success(
-                    "재고 복원 성공",
-                    updatedProduct.stockQuantity
-                )
-            )
+            ResponseEntity.ok(ProductResponse.fromDomain(updatedProduct))
         } catch (e: Exception) {
-            ResponseEntity.badRequest()
-                .body(StockUpdateResponse.failure(e.message ?: "재고 복원 실패"))
+            ResponseEntity.badRequest().build()
         }
     }
 }

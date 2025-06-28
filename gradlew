@@ -26,6 +26,7 @@
 
 # Resolve links: $0 may be a link
 PRG="$0"
+
 # Need this for daisy-chained symlinks.
 while [ -h "$PRG" ] ; do
     ls=`ls -ld "$PRG"`
@@ -36,53 +37,15 @@ while [ -h "$PRG" ] ; do
         PRG=`dirname "$PRG"`"/""$link"
     fi
 done
+
 SAVED="`pwd`"
-cd "`dirname \"$PRG\"`/" >/dev/null
+DIR="`dirname "$PRG"`"
+cd "$DIR"
 APP_HOME="`pwd -P`"
-cd "$SAVED" >/dev/null
+cd "$SAVED"
 
 APP_NAME="Gradle"
 APP_BASE_NAME=`basename "$0"`
-
-# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
-DEFAULT_JVM_OPTS='"--add-exports" "java.base/sun.nio.ch=ALL-UNNAMED" "--add-opens" "java.base/java.lang=ALL-UNNAMED" "--add-opens" "java.base/java.lang.reflect=ALL-UNNAMED" "--add-opens" "java.base/java.io=ALL-UNNAMED" "--add-exports" "jdk.unsupported/sun.misc=ALL-UNNAMED"'
-
-# Use the maximum available, or set MAX_FD != -1 to use that value.
-MAX_FD="maximum"
-
-warn () {
-    echo "$*"
-}
-
-die () {
-    echo
-    echo "$*"
-    echo
-    exit 1
-}
-
-# OS specific support (must be 'true' or 'false').
-cygwin=false
-msys=false
-darwin=false
-nonstop=false
-case "`uname`" in
-  CYGWIN* )
-    cygwin=true
-    ;;
-  Darwin* )
-    darwin=true
-    ;;
-  MSYS* | MINGW* )
-    msys=true
-    ;;
-  NONSTOP* )
-    nonstop=true
-    ;;
-esac
-
-CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
-
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
@@ -93,17 +56,11 @@ if [ -n "$JAVA_HOME" ] ; then
         JAVACMD="$JAVA_HOME/bin/java"
     fi
     if [ ! -x "$JAVACMD" ] ; then
-        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
-
-Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
+        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME\n\nPlease set the JAVA_HOME variable in your environment to match the\nlocation of your Java installation."
     fi
 else
     JAVACMD="java"
-    which java >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
-
-Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
+    which java >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.\n\nPlease set the JAVA_HOME variable in your environment to match the\nlocation of your Java installation."
 fi
 
 # Increase the maximum file descriptors if we can.
@@ -130,44 +87,36 @@ fi
 # For Cygwin or MSYS, switch paths to Windows format before running java
 if [ "$cygwin" = "true" -o "$msys" = "true" ] ; then
     APP_HOME=`cygpath --path --mixed "$APP_HOME"`
-    CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`n
+    CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`
+    
     JAVACMD=`cygpath --unix "$JAVACMD"`
 
     # Now convert the arguments - kludge to limit ourselves to /bin/sh
-    for arg in "$@" ; do
-        CHECK=`echo "$arg"|egrep -c "^-"` || true
-        CHECK2=`echo "$arg"|egrep -c "^-.*=" ` || true
-        if [ $CHECK -ne 0 ] && [ $CHECK2 -eq 0 ] ; then
-            eval `echo args$i`=\"$arg\"
-            i=`expr $i + 1`
-        else
-            eval `echo args$i`='"$arg"'
-            i=`expr $i + 1`
+    for arg ; do
+        if
+            case $arg in                                #(
+              -*)   false ;;                            # don't mess with options #(
+              /?*)  t=${arg#/} t=/${t%%/*}              # looks like a POSIX filepath
+                    [ -e "$t" ] ;;                      #(
+              *)    false ;;
+            esac
+        then
+            arg=$( cygpath --path --ignore --mixed "$arg" )
         fi
+        # Roll the args list around exactly as many times as the number of
+        # args, so each arg winds up back in the position where it started, but
+        # possibly modified.
+        #
+        # NB: a `for` loop captures its iteration list before it begins, so
+        # changing the positional parameters here affects neither the number of
+        # iterations, nor the values presented in `arg`.
+        shift                   # remove old arg
+        set -- "$@" "$arg"      # push replacement arg
     done
-    case $i in
-        0) set -- ;;
-        1) set -- "$args0" ;;
-        2) set -- "$args0" "$args1" ;;
-        3) set -- "$args0" "$args1" "$args2" ;;
-        4) set -- "$args0" "$args1" "$args2" "$args3" ;;
-        5) set -- "$args0" "$args1" "$args2" "$args3" "$args4" ;;
-        6) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" ;;
-        7) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" ;;
-        8) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" ;;
-        9) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" "$args8" ;;
-        *) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" "$args8" "$args9" ;;
-    esac
 fi
 
-# Escape application args
-save () {
-    for i do printf %s\\%s "$1" "$@"; done
-    echo ' '
-}
-APP_ARGS=`save "$@"`
 
-# Collect all arguments for the java command
-eval set -- $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS \"-Dorg.gradle.appname=$APP_BASE_NAME\" -classpath \"$CLASSPATH\" org.gradle.wrapper.GradleWrapperMain "$APP_ARGS"
+# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+DEFAULT_JVM_OPTS='""'
 
 exec "$JAVACMD" "$@"
