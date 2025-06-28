@@ -1,59 +1,79 @@
+# Development 환경용 override 설정
+# docker-compose up 시 자동으로 적용됩니다.
+
 version: '3.8'
 
-# 개발 환경 오버라이드 설정
-# docker-compose up 실행 시 자동으로 적용됩니다.
-
 services:
-  # 개발 시 빠른 재시작을 위한 설정
+  mysql:
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./infrastructure/init-data.sql:/docker-entrypoint-initdb.d/init-data.sql
+
+  kafka:
+    environment:
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+    ports:
+      - "9092:9092"
+
   member-service:
-    environment:
-      - SPRING_PROFILES_ACTIVE=local
-      - LOGGING_LEVEL_COM_VINCENZO=DEBUG
+    build:
+      context: ./member-service
+      dockerfile: Dockerfile
     volumes:
-      - ./member-service/build/libs:/app/libs
-  
-  product-service:
+      - ./member-service:/app
     environment:
-      - SPRING_PROFILES_ACTIVE=local
-      - LOGGING_LEVEL_COM_VINCENZO=DEBUG
-    volumes:
-      - ./product-service/build/libs:/app/libs
-  
-  order-service:
-    environment:
-      - SPRING_PROFILES_ACTIVE=local
-      - LOGGING_LEVEL_COM_VINCENZO=DEBUG
-    volumes:
-      - ./order-service/build/libs:/app/libs
-  
-  payment-service:
-    environment:
-      - SPRING_PROFILES_ACTIVE=local
-      - LOGGING_LEVEL_COM_VINCENZO=DEBUG
-    volumes:
-      - ./payment-service/build/libs:/app/libs
-
-  # 개발용 툴들
-  adminer:
-    image: adminer:4.8.1
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      ADMINER_DEFAULT_SERVER: mysql
-    networks:
-      - vincenzo-network
-
-  # Kafka UI for 개발/디버깅
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    restart: unless-stopped
-    ports:
-      - "8090:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-    networks:
-      - vincenzo-network
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
     depends_on:
+      - mysql
       - kafka
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    volumes:
+      - ./product-service:/app
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
+    depends_on:
+      - mysql
+      - kafka
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    volumes:
+      - ./order-service:/app
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
+    depends_on:
+      - mysql
+      - kafka
+      - member-service
+      - product-service
+      - payment-service
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    volumes:
+      - ./payment-service:/app
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
+    depends_on:
+      - mysql
+      - kafka
+      - member-service
+
+volumes:
+  mysql_dev_data:

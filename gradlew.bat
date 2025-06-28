@@ -1,5 +1,5 @@
 @rem
-@rem Copyright 2015 the original author or authors.
+@rem Copyright 2015 the original authors.
 @rem
 @rem Licensed under the Apache License, Version 2.0 (the "License");
 @rem you may not use this file except in compliance with the License.
@@ -29,11 +29,11 @@ if "%DIRNAME%" == "" set DIRNAME=.
 set APP_BASE_NAME=%~n0
 set APP_HOME=%DIRNAME%
 
-@rem Resolve any ".." in APP_HOME to make the path shorter.
+@rem Resolve any ".." in APP_HOME to make it shorter.
 for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
 
 @rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
-set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
+set DEFAULT_JVM_OPTS=""
 
 @rem Find java.exe
 if defined JAVA_HOME goto findJavaFromJavaHome
@@ -79,8 +79,8 @@ if "%ERRORLEVEL%"=="0" goto mainEnd
 
 :fail
 rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of
-rem the _cmd_ return code
-if not "" == "%GRADLE_EXIT_CONSOLE%" exit 1
+rem the _cmd_ return code.
+if  not "" == "%GRADLE_EXIT_CONSOLE%" exit 1
 exit /b 1
 
 :mainEnd
