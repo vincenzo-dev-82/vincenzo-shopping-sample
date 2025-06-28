@@ -1,0 +1,53 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Build
+build/
+target/
+out/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env*
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Test
+test-results/
+coverage/
+
+# Temporary
+*.tmp
+*.temp
+
+# Local development
+local.properties
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose*.yml
