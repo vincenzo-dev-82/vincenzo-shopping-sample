@@ -39,15 +39,42 @@ data class ProductResponse(
 /**
  * 재고 확인 요청 DTO
  */
-data class StockCheckRequest(
+data class CheckStockRequest(
     val quantity: Int
 )
 
 /**
  * 재고 확인 응답 DTO
  */
-data class StockCheckResponse(
+data class CheckStockResponse(
     val available: Boolean,
     val currentStock: Int,
     val requestedQuantity: Int
 )
+
+/**
+ * 재고 조작 요청 DTO
+ */
+data class StockRequest(
+    val quantity: Int,
+    val transactionId: String
+)
+
+/**
+ * 재고 조작 응답 DTO
+ */
+data class StockResponse(
+    val success: Boolean,
+    val message: String,
+    val currentStock: Int?
+) {
+    companion object {
+        fun success(message: String, currentStock: Int): StockResponse {
+            return StockResponse(true, message, currentStock)
+        }
+        
+        fun failure(message: String): StockResponse {
+            return StockResponse(false, message, null)
+        }
+    }
+}

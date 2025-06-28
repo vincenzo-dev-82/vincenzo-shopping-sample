@@ -1,0 +1,100 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: vincenzo_shopping_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    
+    - name: Build with Gradle
+      run: ./gradlew build --no-daemon
+    
+    - name: Run tests
+      run: ./gradlew test --no-daemon
+      env:
+        DB_HOST: localhost
+        DB_PORT: 3306
+        DB_NAME: vincenzo_shopping_test
+        DB_USERNAME: root
+        DB_PASSWORD: password
+    
+    - name: Generate test report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: Gradle Tests
+        path: '**/build/test-results/test/TEST-*.xml'
+        reporter: java-junit
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./build/reports/jacoco/test/jacocoTestReport.xml
+        fail_ci_if_error: true
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Build JAR files
+      run: ./gradlew bootJar --no-daemon
+    
+    - name: Build Docker images
+      run: |
+        docker build -t vincenzo/member-service:latest ./member-service
+        docker build -t vincenzo/product-service:latest ./product-service
+        docker build -t vincenzo/order-service:latest ./order-service
+        docker build -t vincenzo/payment-service:latest ./payment-service
+    
+    - name: Test Docker Compose
+      run: |
+        docker-compose -f docker-compose.yml config
+        docker-compose up -d --build
+        sleep 30
+        docker-compose ps
+        docker-compose down
