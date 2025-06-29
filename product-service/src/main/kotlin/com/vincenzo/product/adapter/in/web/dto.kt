@@ -47,21 +47,7 @@ data class StockCheckRequest(
  * 재고 확인 응답 DTO
  */
 data class StockCheckResponse(
-    val available: Boolean
-)
-
-/**
- * 재고 차감 요청 DTO
- */
-data class StockDeductRequest(
-    val quantity: Int,
-    val transactionId: String
-)
-
-/**
- * 재고 복원 요청 DTO
- */
-data class StockRestoreRequest(
-    val quantity: Int,
-    val transactionId: String
+    val available: Boolean,
+    val currentStock: Int,
+    val requestedQuantity: Int
 )
