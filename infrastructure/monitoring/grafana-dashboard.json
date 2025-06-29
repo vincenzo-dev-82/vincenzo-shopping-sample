@@ -1,0 +1,136 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "캐시노트 마켓 서비스 대시보드",
+    "tags": ["vincenzo", "shopping", "microservice"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "서비스별 요청 수",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count[5m])) by (service)",
+            "legendFormat": "{{service}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Requests/sec"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "응답 시간 (95th percentile)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le, service))",
+            "legendFormat": "{{service}} 95th"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Response Time (s)"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "에러율",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..|5..\"}[5m])) by (service) / sum(rate(http_server_requests_seconds_count[5m])) by (service)",
+            "legendFormat": "{{service}} Error Rate"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Error Rate",
+            "max": 1,
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "주문 생성 수",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "increase(order_created_total[1h])",
+            "legendFormat": "Orders Created (Last Hour)"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "결제 성공률",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(payment_processed_total{success=\"true\"}[1h])) / sum(increase(payment_processed_total[1h]))",
+            "legendFormat": "Payment Success Rate"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "JVM 힙 메모리 사용률",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"}",
+            "legendFormat": "{{service}} Heap Usage"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Usage Ratio",
+            "max": 1,
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "데이터베이스 연결 수",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "hikaricp_connections_active",
+            "legendFormat": "{{service}} Active Connections"
+          },
+          {
+            "expr": "hikaricp_connections_idle",
+            "legendFormat": "{{service}} Idle Connections"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Kafka 메시지 처리량",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(kafka_consumer_records_consumed_total[5m])) by (topic)",
+            "legendFormat": "{{topic}} Consumed"
+          },
+          {
+            "expr": "sum(rate(kafka_producer_records_sent_total[5m])) by (topic)",
+            "legendFormat": "{{topic}} Produced"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "5s"
+  }
+}
